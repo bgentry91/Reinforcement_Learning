@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Patchwork!</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+    var state
+    var button_locs = [5,11,17,23,29,35,41,47,53]
+    var square_locs = [20,26,32,44,50]
+    var b_rows = [[9,17],[27,35],[45,53]]
+
+    function update_shared_board(loc0, loc1){
+      var dataset = new Array(54);
+      for (var i = 0; i < dataset.length; i++) {
+        if (button_locs.includes(i)) {
+          if (i <=b_rows[0][1] && i >= b_rows[0][0]) 
+            {dataset[(b_rows[0][1] - (i - b_rows[0][0]))] = 3}
+          else if (i <=b_rows[1][1] && i >= b_rows[1][0]) 
+            {dataset[(b_rows[1][1] - (i - b_rows[1][0]))] = 3}
+          else if (i <=b_rows[2][1] && i >= b_rows[2][0]) 
+            {dataset[(b_rows[2][1] - (i - b_rows[2][0]))] = 3}
+          else {dataset[i] = 3}}
+        if (square_locs.includes(i)) {
+          if (i <=b_rows[0][1] && i >= b_rows[0][0]) 
+            {dataset[(b_rows[0][1] - (i - b_rows[0][0]))] = 4}
+          else if (i <=b_rows[1][1] && i >= b_rows[1][0]) 
+            {dataset[(b_rows[1][1] - (i - b_rows[1][0]))] = 4}
+          else if (i <=b_rows[2][1] && i >= b_rows[2][0]) 
+            {dataset[(b_rows[2][1] - (i - b_rows[2][0]))] = 4}
+          else {dataset[i] = 4}}}
+      if (loc0 <=b_rows[0][1] && loc0 >= b_rows[0][0]) 
+        {dataset[b_rows[0][1] - (loc0 - b_rows[0][0])] = 1}
+      else if (loc0 <=b_rows[1][1] && loc0 >= b_rows[1][0]) 
+         {dataset[(b_rows[1][1] - (loc0 - b_rows[1][0]))] = 1}
+      else if (loc0 <=b_rows[2][1] && loc0 >= b_rows[2][0]) 
+        {dataset[(b_rows[2][1] - (loc0 - b_rows[2][0]))] = 1}
+      else {dataset[loc0] = 1}
+      if (loc1 <=b_rows[0][1] && loc1 >= b_rows[0][0]) 
+        {dataset[(b_rows[0][1] - (loc1 - b_rows[0][0]))] = 2}
+      else if (loc1 <=b_rows[1][1] && loc1 >= b_rows[1][0]) 
+         {dataset[(b_rows[1][1] - (loc1 - b_rows[1][0]))] = 2}
+      else if (loc1 <=b_rows[2][1] && loc1 >= b_rows[2][0]) 
+        {dataset[(b_rows[2][1] - (loc1 - b_rows[2][0]))] = 2}
+      else {dataset[loc1] = 2}
+      
+
+      svg3.selectAll("rect.square")
+            .data(dataset)
+            .style("fill", function(d){if (d == 1) {return '#ead42c'}
+                                  else if (d == 2) {return '#94b742'}
+                                  else if (d == 3) {return '#4197b7'}
+                                  else if (d == 4) {return '#895e2d'}
+                                  else {return '#d3d3d3'}});
+    }
+
+    function update_shapes(p_shapes){
+      for (var i = 0; i < p_shapes.length; i++) {
+        this['p'+i].selectAll("rect")
+              .data(p_shapes[i])
+              .style("fill",function(d) {if (d==1) {return '#2875fc';} else {return '#d3d3d3';}});
+      };
+        for (var i =(p_shapes.length); i < 34 ; i++) {
+        this['p'+i].selectAll("rect")
+              .style("fill",function(d) {return '#fcfcf7';});
+      };
+    }
+    function build_perms(perms){
+      for (var i = 0; i < perms.length; i++) {
+        this['perm'+i].selectAll("rect")
+              .data(perms[i])
+              .style("fill",function(d) {if (d==1) {return '#2875fc';} else {return '#d3d3d3';}});
+      };
+        for (var i =(perms.length); i < 8 ; i++) {
+        this['perm'+i].selectAll("rect")
+              .style("fill",function(d) {return '#fcfcf7';});
+      };
+    }
+
+    function clear_selections(){
+      document.getElementById('Play_P').value = "Move";
+      document.getElementById('Perm').value = 0;
+      document.getElementById('XCoord').value = 0;
+      document.getElementById('YCoord').value = 0;
+      build_perms([]);
+    }   
+
+    function show_turn(turn){
+      document.getElementById('turn').innerHTML = 'Player ' + (turn + 1) + ' turn';
+    }  
+
+    function end_game(win){
+      if (win==0) {
+        document.getElementById('turn').innerHTML = 'Game Over. Draw :(';
+      }
+      else{
+        document.getElementById('turn').innerHTML = 'Game Over. Player ' + (win) + ' wins!';
+      }
+      var x = document.getElementById("move");
+      x.style.visibility = "hidden";
+      var y = document.getElementById("c_move");
+      y.style.visibility = "hidden";
+    }
+
+    function set_play_buttons(turn){
+      var p1_type = document.getElementById("P1_Type").value;
+      var p2_type = document.getElementById("P2_Type").value;
+      if (turn == 0) {
+        if (p1_type == 'Human') {
+          var x = document.getElementById("move");
+          x.style.visibility = "visible";
+          var y = document.getElementById("c_move");
+          y.style.visibility = "hidden";
+        }
+        else {
+          var x = document.getElementById("move");
+          x.style.visibility = "hidden";
+          var y = document.getElementById("c_move");
+          y.style.visibility = "visible";
+        }
+      }
+      else {
+        if (p2_type == 'Human') {
+          var x = document.getElementById("move");
+          x.style.visibility = "visible";
+          var y = document.getElementById("c_move");
+          y.style.visibility = "hidden";
+        }
+        else {
+          var x = document.getElementById("move");
+          x.style.visibility = "hidden";
+          var y = document.getElementById("c_move");
+          y.style.visibility = "visible";
+        }
+      }
+    }
+      
+    function update_board(new_game, st){
+      d = {};
+      d['new_game'] = new_game;
+      d['state'] = st;
+      d['action'] = document.getElementById("Play_P").value;
+      d['perm'] = document.getElementById("Perm").value;
+      d['loc'] = [document.getElementById("YCoord").value,
+                  document.getElementById("XCoord").value];
+      d['p1_type'] = document.getElementById("P1_Type").value;
+      d['p2_type'] = document.getElementById("P2_Type").value;
+      d_str = JSON.stringify(d);
+       $.ajax({
+         type: "POST",
+         contentType: "application/json; charset=utf-8",
+         url: "/update",
+         dataType: "json",
+         async: true,
+         data: d_str,
+         success: function (data) {
+            var board1 = data["board1"]
+            var board2 = data["board2"]
+            var p_shapes = data["pieces"]
+            var p_cost = data['costs']
+            var p_spaces = data['spaces']
+            var p_buttons = data['buttons']
+            var loc0 = data['state'][83]
+            var loc1 = data['state'][168]
+            var squares = data['state'][208]
+            var p0_b = data['state'][81]
+            var p0_bb = data['state'][84]
+            var p1_b = data['state'][166]
+            var p1_bb = data['state'][169]
+            var turn = data['state'][171]
+            var reward = data['reward']
+            var status = data['status']
+            if (new_game == 1) {
+              square_locs = [20,26,32,44,50]
+                  var x = document.getElementById("move");
+                  x.style.visibility = "visible";
+            }
+            square_locs = square_locs.filter(function(number){return number >= squares})
+            state = data["state"]
+            svg.selectAll("rect")
+              .data(board1)
+              .style("fill",function(d) {if (d==1) {return '#2875fc';} else {return '#ead42c';}});
+            svg2.selectAll("rect")
+              .data(board2)
+              .style("fill",function(d) {if (d==1) {return '#2875fc';} else {return '#94b742';}});
+            show_turn(turn)
+            update_shapes(p_shapes)
+            update_shape_values(p_cost, p_spaces, p_buttons)
+            update_shared_board(loc0, loc1)
+            update_player_values(p0_b, p0_bb, p1_b, p1_bb)
+            clear_selections()
+            set_play_buttons(turn)
+            if (status == true) {
+              if (reward == -1) {end_game(2)}
+              if (reward == 1) {end_game(1)}
+              if (reward == 0) {end_game(0)}
+            }
+          }
+       })
+     }
+
+    function update_shape_values(costs, spaces, buttons){
+      for (var i = 0; i < costs.length; i++) {
+        output_string = ('Piece: ' + (i+1) + '<br/> Cost: ' + costs[i] + '<br/> Spaces: '
+                      + spaces[i] + '<br/> Buttons: ' + buttons[i])
+        document.getElementById(['p'+i]).innerHTML = output_string;
+      };
+      for (var i =(costs.length); i < 34 ; i++) {
+        document.getElementById('p'+i).innerHTML = '';
+      };
+    }
+
+    function update_player_values(p0_b, p0_bb, p1_b, p1_bb ){
+      p0_str = 'Bank Buttons: ' + p0_b + '<br/> Board Buttons: ' + p0_bb
+      p1_str = 'Bank Buttons: ' + p1_b + '<br/> Board Buttons: ' + p1_bb
+      document.getElementById(['player0']).innerHTML = p0_str;
+      document.getElementById(['player1']).innerHTML = p1_str;
+    }
+
+    function update_perms(){
+      var p = document.getElementById("Play_P").value;
+      if (p == "Move") {
+        build_perms([])}
+      else {
+      d = {};
+      d['p'] = p;
+      d['state'] = state;
+      d_str = JSON.stringify(d);
+       $.ajax({
+         type: "POST",
+         contentType: "application/json; charset=utf-8",
+         url: "/perm",
+         dataType: "json",
+         async: true,
+         data: d_str,
+         success: function (data) {
+            var p_perms = data["perms"]
+            build_perms(p_perms)
+         }
+       })
+     }
+   }
+    </script>
+    <style type="text/css">
+      .row {
+          display: flex;
+      }
+
+      .column {
+          flex: 50%;
+      }
+    </style>
+
+  </head>
+  <body style='font-family: Arial; background-color:#fcfcf7'>
+    <div style='font-size: 40px; font-weight: bold;'>
+      Patchwork
+    </div>
+    <hr style='height:3px; background-color:black; padding-top:-20px'>
+    <div>
+      <span>
+          Select Player 1 Type:
+          <select id="P1_Type">
+            <option value ='Human'>Human</option>
+            <option value='Computer'>Computer</option>
+          </select>
+      </span>
+      <span style = "display: inline-block; margin-left: 20px">
+          Select Player 2 Type:
+          <select id="P2_Type">
+            <option value ='Human'>Human</option>
+            <option value='Computer'>Computer</option>
+          </select>
+      </span>
+      <span style = "display: inline-block; margin-left: 80px">
+        <button type="button" onClick="update_board(1, 0)">Start New Game</button>
+      </span>
+    </div>
+    <br>
+    <div>
+      <span style = "display: inline-block; margin-left: 80px">
+        Player 1 Board
+      </span>
+      <span style = "display: inline-block; margin-left: 250px">
+        Player 2 Board
+      </span>
+            <span style = "display: inline-block; margin-left: 250px">
+        Shared Board
+      </span>
+    </div>
+    <span>
+      <script>
+         var dataset = new Array(81)
+         var svg = d3.select("body").append("svg")
+                     .attr("width", 270)
+                     .attr("height", 270);
+         svg.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%9)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/9)*30; })
+            .style("fill",'#ead42c')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var svg2 = d3.select("body").append("svg")
+               .attr("width", 270)
+               .attr("height", 270)
+               
+          svg2.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%9)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/9)*30; })
+            .style("fill",'#94b742')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+        var dataset = new Array(54)
+          var svg3 = d3.select("body").append("svg")
+               .attr("width", 180)
+               .attr("height", 270)
+               
+          svg3.selectAll("rect.square")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%9)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/9)*30; })
+            .style("fill",'#d3d3d3')
+            .attr("class", "square");
+
+        var vert_lines = new Array(7)
+          svg3.selectAll("rect.vert_lines")
+            .data(vert_lines)
+            .enter().append("rect")
+            .attr("y", function(d, i) {if (i%2==0 && i!=0 && i !=6) {return 28}
+                                      else {return 0 }})
+            .attr("width", 2)
+            .attr("height", function(d, i) {if (i%2==1) {return 240}
+                                      else {return 270 }})
+            .attr("x", function(d, i) {if (i==0) {return 0} else{return (i)*30-2; }})
+            .style("fill",'#000000')
+
+          var hor_lines = new Array(2)
+          svg3.selectAll("rect.hor_lines")
+            .data(hor_lines)
+            .enter().append("rect")
+            .attr("y", function(d, i) {if (i==0) {return 0}
+                                      else {return 268 }})
+            .attr("width", 180)
+            .attr("height", 2)
+            .attr("x", function(d, i) {if (i==0) {return 28}
+                                      else {return 0 }})
+            .style("fill",'#000000')
+      </script>
+    </span>
+    <br>
+    <span id='player0', style = 'display:inline-block; width: 370px; vertical-align: top;
+                                  margin-left: 80px'>
+    </span>
+    <span id ='player1', style = 'display:inline-block; width: 200px; vertical-align: top;'>
+    </span>
+    <br>
+    <div id='turn', style='font-weight: bold'>
+    </div>
+    <br>
+    <div>
+      Select Piece to Play:
+      <select id="Play_P", onchange="update_perms()"">
+            <option value ="Move">Move</option>
+            <option value=0>1</option>
+            <option value=1>2</option>
+            <option value=2>3</option>
+      </select>
+      <span style="display:inline-block; margin-left: 30px;">
+          Select Permutation to Play:
+          <select id="Perm">
+            <option value =0>1</option>
+            <option value=1>2</option>
+            <option value=2>3</option>
+            <option value=3>4</option>
+            <option value=4>5</option>
+            <option value=5>6</option>
+            <option value=6>7</option>
+            <option value=7>8</option>
+          </select>
+      </span>
+    </div>
+    <div style='padding-top: 10px'>
+      <span style="display:inline-block; margin-left: 0px;">
+          Select X Coordinate to Play:
+          <select id="XCoord">
+            <option value=0>1</option>
+            <option value=1>2</option>
+            <option value=2>3</option>
+            <option value=3>4</option>
+            <option value=4>5</option>
+            <option value=5>6</option>
+            <option value=6>7</option>
+            <option value=7>8</option>
+            <option value=8>9</option>
+          </select>
+      </span>
+      <span style="display:inline-block; margin-left: 30px;">
+          Select Y Coordinate to Play:
+          <select id="YCoord">
+            <option value=0>1</option>
+            <option value=1>2</option>
+            <option value=2>3</option>
+            <option value=3>4</option>
+            <option value=4>5</option>
+            <option value=5>6</option>
+            <option value=6>7</option>
+            <option value=7>8</option>
+            <option value=8>9</option>
+          </select>
+      </span>
+    </div>
+    <br>
+    <div>
+      <span>
+        <button id='move', type="button" onClick="update_board(0, state)", style='visibility:hidden';>
+          Make Move
+        </button>
+      </span>
+      <span>
+        <button id='c_move', type="button" onClick="update_board(0, state)", style='visibility:hidden';>
+          Computer Move
+        </button>
+      </span>
+    </div>
+    <br>
+    <br>
+    <span>
+      <span id="p0", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p0 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p0.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm0 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm0.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p1", style = 'display:inline-block; width: 90px;; vertical-align: top;'>
+      </span>
+      <script>
+         var p1 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p1.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm1 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm1.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p2", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p2 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p2.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm2 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm2.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p3", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p3 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p3.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm3 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm3.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p4", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p4 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p4.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm4 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm4.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p5", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p5 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p5.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm5 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm5.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p6", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p6 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p6.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm6 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm6.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p7", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p7 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p7.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span style = "display: inline-block; margin: 50px">
+      <script>
+         var perm7 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          perm7.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p8", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p8 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p8.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p9", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p9 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p9.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p10", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p10 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p10.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p11", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p11 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p11.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p12", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p12 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p12.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p13", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p13 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p13.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p14", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p14 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p14.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p15", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p15 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p15.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p16", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p16 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p16.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <span>
+      <br>
+      <span id="p17", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p17 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p17.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p18", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p18 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p18.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p19", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p19 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p19.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p20", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p20 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p20.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p21", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p21 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p21.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p22", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p22 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p22.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p23", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p23 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p23.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p24", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p24 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p24.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p25", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p25 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p25.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p26", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p26 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p26.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p27", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p27 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p27.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p28", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p28 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p28.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p29", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p29 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p29.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p30", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p30 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p30.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p31", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p31 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p31.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <spam>
+      <span id="p32", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p32 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p32.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+    <br>
+    <span>
+      <span id="p33", style = 'display:inline-block; width: 90px; vertical-align: top;'>
+      </span>
+      <script>
+         var p33 = d3.select("body").append("svg")
+               .attr("width", 150)
+               .attr("height", 150)
+               
+          p33.selectAll("rect")
+            .data(dataset)
+            .enter().append("rect")
+            .attr("y", function(d, i) { dataset[i]=0; return (i%5)*30 })
+            .attr("width", 28)
+            .attr("height", 28)
+            .attr("x", function(d, i) { return Math.floor(i/5)*30; })
+            .style("fill",'#fcfcf7')
+      </script>
+    </span>
+  </body>
+</html>
